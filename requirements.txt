@@ -1,0 +1,7 @@
+mss==6.1.0
+pytesseract==0.3.7
+opencv_python==4.5.2.52
+numpy==1.19.5
+matplotlib==3.3.4
+PyAutoGUI==0.9.52
+PyYAML==5.4.1

@@ -1,0 +1,11 @@
+negatives/processed/not_trees1.png
+negatives/processed/not_trees2.png
+negatives/processed/not_trees3.png
+negatives/processed/not_trees4.png
+negatives/processed/not_trees5.png
+negatives/processed/not_trees6.png
+negatives/processed/not_trees7.png
+negatives/processed/not_trees8.png
+negatives/processed/not_trees9.png
+negatives/processed/not_trees10.png
+negatives/processed/not_trees11.png
