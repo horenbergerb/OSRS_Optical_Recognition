@@ -1,0 +1,29 @@
+screen:
+    # the top-left corner of the game window
+    x: 1759
+    y: 1097
+    w: 765
+    h: 503
+
+# these coordinates are relative to the top-left corner of the game window
+
+regions:
+    # one image is 36x32, there is a gap between each slot
+    inventory:
+        x: 550
+        y: 205
+        w: 185
+        h: 260
+
+    tooltip:
+        x: 4
+        y: 5
+        w: 300
+        h: 20
+
+text_colors:
+    - [0, 191, 191]
+    - [194, 195, 197]
+    - [1, 196, 4]
+    - [196, 198, 5]
+    - [50, 113, 200]
