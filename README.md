@@ -1,31 +1,39 @@
 # Overview
 
-This is a collection of tools which attempt to parse a live video feed of Old School Runescape into actionable intelligence using image processing techniques as well as some object recognition and template matching.
+This began as a collection of general tools which can be used to parse a live feed of a video game into into actionable intelligence. I was using Old School Runescape as the subject of testing.
 
-These scripts aim to demonstrate how relatively simple techniques can be used to assist or automate nontrivial processes such as playing a video game.
+This project is now focused on implementing real-time image segmentation to parse the play screen of OSRS. It will be trained on easily-obtainable training data.
 
-There are a few scripts which you can run that demo the various features. I will detail them below. Each of them have settings in config.yaml that will need to be tweaked.
+The project is divided into three broad components
 
-# Scripts You Can Run
+![](docs/OverviewFlowchart.png)
 
-## run_classifier_live.py
+# Running the Code
 
-Runs an object classifier (Haar cascade) on Runescape and highlights the detected objects. This repo includes two trained cascades. One detects trees, and the other detects chickens.
+Browse the `demos.py` file for a survey of the various implemented features.
 
-![](docs/chicken_detection.gif)
+# Implementation Details
 
-## parse_tooltip_live.py
+## Data Collection/Preprocessing
 
-Extracts the tooltip in the top left of the screen and attempts to parse it using optical character recognition. Uses some thresholding and other shenanigans to try and remove the "noise" behind the letters, and then it uses dilation/erosion to make the letters easier for pytesseract to understand.
+First we collect triplets of (Mouse Position, Tooltip, 32x32 Screenshot centered on mouse)
 
-![](docs/tooltip_parser.gif)
+![](docs/DataCollectionLoop.png)
 
-## parse_inventory_live.py
+Next we generate text labels for these triplets using OCR on the Tooltip. We also reformat the labeled data to be compatible with Torchvision's ImageFolder dataset
 
-Searches the inventory for slots which match the provided item template. The default item is an Oak log.
+![](docs/LabelingImageDatasetLoop.png)
 
-## minimap_matching.py
+## Machine Learning Training
 
-Takes a screenshot of the minimap (which has been oriented so north is up) and template matches it to a map of the entire game. Outputs a world map with a bounding box around the matching region as well as a heat map indicating match likelihood. 
+Once the training data is in the format of an ImageFolder dataset, it's pretty cut and dry to load up MobileNet and finetune the network using Pytorch.
 
-The minimap sample images are both in Lumbridge.
+## Real-time Screen Segmentation
+
+This part is still under construction, but the procedure will be a loop kind of like this:
+
+1) Screenshot the play screen
+2) Divide playscreen into a grid of 32x32 regions
+3) Classify each region
+    - If this is too computationally intensive, I will implement some kind of interlacing, like only classifying every other block in each pass.
+4) Display color-coded classifications

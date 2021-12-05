@@ -8,6 +8,13 @@ screen:
 # these coordinates are relative to the top-left corner of the game window
 
 regions:
+    # this is slightly too short so that both dimensions are divisible by 32
+    playscreen:
+        x: 4
+        y: 4
+        w: 512
+        h: 320
+
     # one image is 36x32, there is a gap between each slot
     inventory:
         x: 550
@@ -22,8 +29,18 @@ regions:
         h: 20
 
 text_colors:
-    - [0, 191, 191]
-    - [194, 195, 197]
-    - [1, 196, 4]
-    - [196, 198, 5]
-    - [50, 113, 200]
+    white:
+        - [225, 225, 225]  # white 1
+        - [200, 200, 200]  # white 2
+    yellow:
+        - [22, 220, 220]  # yellow 1
+        - [5, 200, 200]  # yellow 2
+    green:
+        - [15, 227, 33]  # green 1
+        - [3, 200, 8]  # green 2
+    blue:
+        - [218, 233, 15] # blue 1
+        - [211, 212, 3] # blue 2
+    orange:
+        - [61, 135, 231] # orange 1
+        - [55, 123, 217] # orange 2
