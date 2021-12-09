@@ -189,7 +189,7 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
 
 def main():
     model = initialize_model(num_classes, feature_extract, use_pretrained=True)
-
+        
     print("Initializing Datasets and Dataloaders...")
     dataloaders_dict = get_dataloaders()
 
@@ -235,6 +235,8 @@ def main():
                               optimizer_ft,
                               scheduler_ft,
                               num_epochs=num_epochs)
+
+    torch.save(model.state_dict(), 'trained_mobilenet_model.pt')
 
     # Plot the training curves of validation accuracy vs. number
     #  of training epochs for the transfer learning method and

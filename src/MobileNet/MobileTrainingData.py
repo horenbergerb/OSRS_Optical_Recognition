@@ -30,7 +30,7 @@ def SavePickle(data, filename):
         pickle.dump(data, f)
 
 
-def TooltipsToLabels(samples, labels, config_dir):
+def LabelSamples(samples, config_dir):
     config = yaml.safe_load(open(config_dir))
     keep_colors = config['text_colors']['blue'] + \
                   config['text_colors']['yellow']
@@ -46,8 +46,7 @@ def TooltipsToLabels(samples, labels, config_dir):
             cv.COLOR_GRAY2RGB)
         samples[idx].label = pytesseract.image_to_string(
             samples[idx].tooltip).strip().lower()
-        labels.add(samples[idx].label)
-    return samples, labels
+    return samples
 
 
 class TrainingDataGenerator:
@@ -64,7 +63,7 @@ class TrainingDataGenerator:
     def _SavePickle(self, data, idx):
         with open(self.base_dir.format(idx), 'wb') as f:
             pickle.dump(data, f)
-            
+
     def CollectAndPickleSamples(self,
                                 config_dir='screen_cfg.yaml',
                                 num_samples=600,
@@ -88,7 +87,6 @@ class TrainingDataGenerator:
         sct = mss.mss()
         sample_count = 0
         batches = 0
-        labels = set()
 
         if do_print:
             print('Beginning capture of frame data...')
@@ -104,6 +102,7 @@ class TrainingDataGenerator:
                               'left': s_x,
                               'height': s_h,
                               'width': s_w}), dtype=np.uint8)
+                time.sleep(.021)
                 mouse_pos_f = pag.position()
                 screen_f = np.array(
                     sct.grab({'top': s_y,
@@ -112,12 +111,15 @@ class TrainingDataGenerator:
                               'width': s_w}), dtype=np.uint8)
 
                 if (((mouse_pos_i[0]-mouse_pos_f[0])**2) +
-                    ((mouse_pos_i[0]-mouse_pos_f[0])**2)) > 8:
-                    print('Mouse moving too fast to capture')
+                    ((mouse_pos_i[0]-mouse_pos_f[0])**2)) > 6:
                     continue
 
                 screen_i = screen_i[:, :, :-1]
                 screen_f = screen_f[:, :, :-1]
+
+                if np.sum(np.abs(screen_i-screen_f)) > 32*32*4:
+                    continue
+
                 m_x, m_y = mouse_pos_i
 
                 # only sample if the entire box is within the play screen
@@ -131,11 +133,12 @@ class TrainingDataGenerator:
                     tooltip = screen_i[5:5+20, 4:4+300]
                     new_samples.append(
                         RawTrainingData(
-                            screen_i[m_y_l-(box_l//2):m_y_l+(box_l//2),
+                            screen_f[m_y_l-(box_l//2):m_y_l+(box_l//2),
                                      m_x_l-(box_l//2):m_x_l+(box_l//2), :],
                             tooltip,
                             -1))
                     sample_count += 1
+                    print('Samples: {}/{}'.format(sample_count, num_samples))
                 time.sleep(delay)
             SavePickle(new_samples,
                        self.base_dir.format(sample_count//batch_size))
@@ -143,16 +146,15 @@ class TrainingDataGenerator:
         if do_print:
             print('Data capture complete. Parsing tooltips with OCR...')
 
-        for idx in range(1, batches+1):
+    def LabelPickledSamples(self, config_dir='screen_cfg.yaml'):
+        num_files = 0
+        while(os.path.exists(self.base_dir.format(num_files + 1))):
+            num_files += 1
+        for idx in range(1, num_files):
             samples = LoadPickle(self.base_dir.format(idx))
-            samples, labels = TooltipsToLabels(samples,
-                                               labels,
-                                               config_dir)
+            samples = LabelSamples(samples,
+                                   config_dir)
             SavePickle(samples, self.base_dir.format(idx))
-            SavePickle(labels, self.base_dir.format('labels'))
-
-        if do_print:
-            print('Label processing complete.')
 
     def PicklesToImageDataset(self, img_dir='data/images/{}'):
         '''
@@ -160,6 +162,10 @@ class TrainingDataGenerator:
         TorchVision's Image Dataset.
         '''
         label_counts = dict()
+        for label_dir in os.listdir(img_dir[:-3]):
+            label_counts[label_dir] = max(
+                [int(x[:-4]) for x in os.listdir(img_dir.format(label_dir))])
+        os.listdir()
         num_files = 0
         while(os.path.exists(self.base_dir.format(num_files + 1))):
             num_files += 1
@@ -185,4 +191,5 @@ class TrainingDataGenerator:
 
 if __name__ == '__main__':
     tdh = TrainingDataGenerator(base_dir='data/pickles/samples_{}.pkl')
+    tdh.LabelPickledSamples()
     tdh.PicklesToImageDataset()

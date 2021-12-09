@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple, List
+import time
 
 import cv2 as cv
 import pyautogui as pag
@@ -27,6 +28,7 @@ class VideoCapturer:
         self.do_print = do_print
 
     def capture(self, delay=10):
+        total_time = 0
         if self.do_print:
             print('Beginning video capture mode...')
             print('Press  \'c\' to start/stop capture, \'p\' to pause/play, '
@@ -34,6 +36,7 @@ class VideoCapturer:
         print('Capturing: False')
         capturing = False
         running = True
+        start_time = -1
         while running:
             self._sm.update()
             s = self._sm.screen
@@ -52,12 +55,17 @@ class VideoCapturer:
             # quit
             if key_pressed == ord('q'):
                 if self.do_print:
+                    print('Captured {} seconds of video'.format(total_time))
                     print('Terminating capture mode...')
                 return self._frames
 
             # capture
             if key_pressed == ord('c'):
                 capturing = not capturing
+                if capturing:
+                    start_time = time.time()
+                else:
+                    total_time += time.time()-start_time
                 print('Capturing: {}'.format(capturing))
 
 

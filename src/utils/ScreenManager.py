@@ -33,6 +33,7 @@ class ScreenManager:
         x = self._screen_dims['x']
         h = self._screen_dims['h']
         w = self._screen_dims['w']
+
         mouse_pos_i = pag.position()
         screen = np.array(
             self._sct.grab({'top': y,
@@ -40,12 +41,25 @@ class ScreenManager:
                             'height': h,
                             'width': w}), dtype=np.uint8)
         mouse_pos_f = pag.position()
-        if (((mouse_pos_i[0]-mouse_pos_f[0])**2) +
-            ((mouse_pos_i[0]-mouse_pos_f[0])**2)) > 8:
-            self.fast_mouse = True
-        else:
-            self.fast_mouse = False
 
+        '''
+        m_x, m_y = mouse_pos_i
+        if (m_x > x) and \
+           (m_x < x+w) and \
+           (m_y > y) and \
+           (m_y < y+h):
+
+            # local mouse coordinates relative to the captured screen
+            screen = cv.circle(screen, (m_x-x, m_y-y), radius=1, color=(0, 0, 255), thickness=-1)
+
+        m_x, m_y = mouse_pos_f
+        if (m_x > x) and \
+           (m_x < x+w) and \
+           (m_y > y) and \
+           (m_y < y+h):
+            # local mouse coordinates relative to the captured screen
+            screen = cv.circle(screen, (m_x-x, m_y-y), radius=1, color=(0, 255, 0), thickness=-1)
+        '''
         self.mouse_pos = mouse_pos_i
         self._screen = screen
 
