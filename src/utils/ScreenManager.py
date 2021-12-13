@@ -21,7 +21,6 @@ class ScreenManager:
         self._screen_dims = screen_dims
         self._screen = None
         self.mouse_pos = None
-        self.fast_mouse = False
         self._regions = regions
 
     def update(self):
@@ -34,34 +33,12 @@ class ScreenManager:
         h = self._screen_dims['h']
         w = self._screen_dims['w']
 
-        mouse_pos_i = pag.position()
-        screen = np.array(
+        self.mouse_pos = pag.position()
+        self._screen = np.array(
             self._sct.grab({'top': y,
                             'left': x,
                             'height': h,
                             'width': w}), dtype=np.uint8)
-        mouse_pos_f = pag.position()
-
-        '''
-        m_x, m_y = mouse_pos_i
-        if (m_x > x) and \
-           (m_x < x+w) and \
-           (m_y > y) and \
-           (m_y < y+h):
-
-            # local mouse coordinates relative to the captured screen
-            screen = cv.circle(screen, (m_x-x, m_y-y), radius=1, color=(0, 0, 255), thickness=-1)
-
-        m_x, m_y = mouse_pos_f
-        if (m_x > x) and \
-           (m_x < x+w) and \
-           (m_y > y) and \
-           (m_y < y+h):
-            # local mouse coordinates relative to the captured screen
-            screen = cv.circle(screen, (m_x-x, m_y-y), radius=1, color=(0, 255, 0), thickness=-1)
-        '''
-        self.mouse_pos = mouse_pos_i
-        self._screen = screen
 
     def __getattr__(self, name):
         '''Allows the user to access ROIs'''

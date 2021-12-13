@@ -2,11 +2,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
+from torchvision import datasets, transforms
+
 import numpy as np
-from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
+
 import time
 import copy
+import os
+
+from src.utils.TorchUtils import get_device
 
 
 '''
@@ -14,20 +19,13 @@ Much of this code was liberally salvaged from the following tutorial:
 https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html
 '''
 
-# using ImageFolder dataset via torchvision
-data_dir = "./data/images"
 
-num_classes = 2
-
-batch_size = 16
-
-num_epochs = 15
-
-# Flag for feature extracting. When False, we finetune the whole model,
-# when True we only update the reshaped layer params
-feature_extract = True
-
-input_size = 32
+def make_conv_layer(in_channels, out_channels, kernel=3, batch_norm=True):
+    return nn.Sequential(
+        nn.Conv2d(in_channels, out_channels, kernel),
+        nn.ReLU(),
+        nn.BatchNorm2d(out_channels)
+    )
 
 
 class CNNet(nn.Module):
@@ -35,56 +33,29 @@ class CNNet(nn.Module):
     def __init__(self, num_classes):
         self.num_classes = num_classes
         super(CNNet, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(3, 8, 3),
-            nn.ReLU(),
-            nn.BatchNorm2d(8),
-            nn.Conv2d(8, 16, 3),
-            nn.ReLU(),
-            nn.BatchNorm2d(16)
+
+        self.backbone = nn.Sequential(
+            make_conv_layer(3, 8, 3),
+            make_conv_layer(8, 16, 3),
+            nn.MaxPool2d(2),
+            make_conv_layer(16, 16, 3),
+            make_conv_layer(16, 16, 3)
         )
 
-        self.layer2 = nn.Sequential(
-            nn.MaxPool2d(2)
-        )
-
-        self.layer3 = nn.Sequential(
-            nn.Conv2d(16, 16, 3),
-            nn.ReLU(),
-            nn.BatchNorm2d(16),
-            nn.Conv2d(16, 16, 3),
-            nn.ReLU(),
-            nn.BatchNorm2d(16)
-        )
-
-        self.layer4 = nn.Sequential(
+        self.head = nn.Sequential(
             nn.Flatten(1),
             nn.Linear(1600, 128),
             nn.Linear(128, 64),
-            nn.Linear(64, self.num_classes),
-
+            nn.Linear(64, self.num_classes)
         )
 
     def forward(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        x = self.backbone(x)
+        x = self.head(x)
         return x
 
 
-def get_device():
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        gpu_name = torch.cuda.get_device_name()
-        print(f"Running on your {gpu_name} (GPU)")
-    else:
-        device = torch.device("cpu")
-        print("Running on your CPU")
-    return device
-
-
-def get_dataloaders():
+def get_dataloaders(data_dir='./data/images', input_size=32, batch_size=16):
     '''Create training and validation datasets
     Using this resource:
     https://stackoverflow.com/questions/51782021/how-to-use-different-data-augmentation-for-subsets-in-pytorch
@@ -125,21 +96,9 @@ def get_dataloaders():
     return dataloaders_dict
 
 
-def initialize_model(num_classes, feature_extract, use_pretrained=True):
-    '''Loads MobileNet, reshapes the last layer to match the number of classes,
-    specifies which parts of the model will be updated during training'''
-    model = models.mobilenet_v3_small(pretrained=use_pretrained)
-    set_parameter_requires_grad(model, feature_extract)
-    model.classifier[3] = nn.Linear(
-        in_features=1024,
-        out_features=num_classes,
-        bias=True)
-
-    return model
-
-
-def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=25):
-    '''The actual training procedure for a MobileNet instance'''
+def train_model(model, dataloaders, criterion,
+                optimizer, scheduler, num_epochs=25):
+    '''The actual training procedure for a CNN classifier'''
 
     device = get_device()
 
@@ -217,10 +176,25 @@ def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=
 
 
 def main():
+    '''Creates and trains a CNN to classify images
+    based on the data/images directory.
+    Saves the CNN to 'models/trained_cnn_model.pt' '''
+
+    # using ImageFolder dataset via torchvision
+    data_dir = "./data/images"
+    batch_size = 16
+    num_epochs = 15
+    # assumes 32x32 images
+    input_size = 32
+
+    num_classes = len(os.listdir(data_dir))
+
     model = CNNet(num_classes)
 
     print("Initializing Datasets and Dataloaders...")
-    dataloaders_dict = get_dataloaders()
+    dataloaders_dict = get_dataloaders(data_dir=data_dir,
+                                       input_size=input_size,
+                                       batch_size=batch_size)
 
     # Detect if we have a GPU available
     device = get_device()
@@ -258,7 +232,3 @@ def main():
     plt.ylim((0, 1.))
     plt.xticks(np.arange(1, num_epochs+1, 1.0))
     plt.show()
-
-
-if __name__ == '__main__':
-    main()

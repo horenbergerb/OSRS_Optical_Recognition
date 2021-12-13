@@ -50,7 +50,7 @@ class TrainingDataGenerator:
                                 delay=.05,
                                 do_print=True):
         '''
-        Collecting training data for MobileNet
+        Collecting training data for image classifier
         Samples 32x32 regions around the mouse along with the current tooltip
         After collection, tooltips are parsed via OCR into text labels
         The results are saved to a set of pickle files
