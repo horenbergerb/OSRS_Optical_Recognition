@@ -26,14 +26,19 @@ Next we generate text labels for these triplets using OCR on the Tooltip. We als
 
 ## Machine Learning Training
 
-Once the training data is in the format of an ImageFolder dataset, it's pretty cut and dry to load up MobileNet and finetune the network using Pytorch.
+Once the training data is in the format of an ImageFolder dataset, it's pretty cut and dry to load up a neural network and train using Pytorch.
 
 ## Real-time Screen Segmentation
 
-This part is still under construction, but the procedure will be a loop kind of like this:
+The segmentation operation proceeds as follows:
 
 1) Screenshot the play screen
 2) Divide playscreen into a grid of 32x32 regions
 3) Classify each region
-    - If this is too computationally intensive, I will implement some kind of interlacing, like only classifying every other block in each pass.
 4) Display color-coded classifications
+
+There are postprocessing methods that need documentation
+
+## Future Frame Prediction
+
+This is a new feature which needs documentation

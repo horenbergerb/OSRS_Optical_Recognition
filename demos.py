@@ -7,13 +7,14 @@ import os
 from src.utils.ScreenManager import ScreenManager
 from src.utils.VideoTools import VideoCapturer, VideoEditor
 from src.utils.ExtractionTools import extract_colors
-from src.MobileNet.MobileTrainingData import TrainingDataGenerator, LoadPickle
-from src.MobileNet import TrainMobileNet
-from src.MobileNet import ParseScreenMobileNet
-from src.MobileNet import TrainCNN
-from src.MobileNet import ParseScreenCNN
-from src.MobileNet.FramePredDataLoader import FramePredictionDataset
-from src.MobileNet import Train3DCNN
+from src.utils.PickleUtils import LoadPickle
+from src.Segmentation.CollectTrainingData import TrainingDataGenerator
+from src.Segmentation import MobileNet
+from src.Segmentation import SegmentWithMobileNet
+from src.Segmentation import CNN
+from src.Segmentation import SegmentWithCNN
+from src.FutureFramePrediction.FramePredictionDataset import FramePredictionDataset
+from src.FutureFramePrediction import CNN3D
 
 
 def ShowROIs():
@@ -69,8 +70,8 @@ def CreateTrainingData():
     '''
     tdh = TrainingDataGenerator(base_dir='samples_{}.pkl')
     tdh.CollectAndPickleSamples(config_dir='screen_cfg.yaml',
-                                num_samples=1200,
-                                batch_size=200,
+                                num_samples=200,
+                                batch_size=100,
                                 box_l=32,
                                 delay=.05,
                                 do_print=True)
@@ -85,23 +86,23 @@ def CreateTrainingData():
 
 
 def TrainMobileDemo():
-    TrainMobileNet.main()
+    MobileNet.main()
 
 
 def ParseScreenWithMobileNet():
-    ParseScreenMobileNet.parse_screen_live()
+    SegmentWithMobileNet.parse_screen_live()
 
 
 def TrainCNNDemo():
-    TrainCNN.main()
+    CNN.main()
 
 
 def Train3DCNNDemo():
-    Train3DCNN.main()
+    CNN3D.main()
 
 
 def ParseScreenWithCNN(num_classes):
-    ParseScreenCNN.parse_screen_live(num_classes=num_classes, diffuse_time=True)
+    SegmentWithCNN.parse_screen_live(num_classes=num_classes, diffuse_time=False)
 
 
 def TestFramePredDataLoader():
@@ -113,13 +114,13 @@ def TestFramePredDataLoader():
 
 def CompareSpatialTemporalFiltering():
     # RecordAndSaveVideo('data/videos/cows_near/{}.png')
-    # ParseScreenCNN.predict_for_directory('data/videos/cows_near', 'data/videos/cows_near_pred.pkl', num_classes=2)
-    # ParseScreenCNN.predict_for_directory('data/videos/cows_near', 'data/videos/cows_near_spatial1_pred.pkl', diffuse_space=True, num_classes=2)
-    # ParseScreenCNN.predict_for_directory('data/videos/cows_near', 'data/videos/cows_near_temporal3_pred.pkl', diffuse_time=True, num_classes=2)
-    # ParseScreenWithCNN(num_classes=2)
-    frames1 = ParseScreenCNN.render_directory('data/videos/cows_near', 'data/videos/cows_near_pred.pkl')
-    frames2 = ParseScreenCNN.render_directory('data/videos/cows_near', 'data/videos/cows_near_spatial1_pred.pkl')
-    frames3 = ParseScreenCNN.render_directory('data/videos/cows_near', 'data/videos/cows_near_temporal3_pred.pkl')
+    # SegmentWithCNN.predict_for_directory('data/videos/cows_near', 'data/videos/cows_near_pred.pkl', num_classes=2)
+    # SegmentWithCNN.predict_for_directory('data/videos/cows_near', 'data/videos/cows_near_spatial1_pred.pkl', diffuse_space=True, num_classes=2)
+    # SegmentWithCNN.predict_for_directory('data/videos/cows_near', 'data/videos/cows_near_temporal3_pred.pkl', diffuse_time=True, num_classes=2)
+    # SegmentWithWithCNN(num_classes=2)
+    frames1 = SegmentWithCNN.render_directory('data/videos/cows_near', 'data/videos/cows_near_pred.pkl')
+    frames2 = SegmentWithCNN.render_directory('data/videos/cows_near', 'data/videos/cows_near_spatial1_pred.pkl')
+    frames3 = SegmentWithCNN.render_directory('data/videos/cows_near', 'data/videos/cows_near_temporal3_pred.pkl')
     orig_vs_space = [np.hstack((frame1, frame2)) for (frame1, frame2) in zip(frames1, frames2)]
     orig_vs_time = [np.hstack((frame1, frame3)) for (frame1, frame3) in zip(frames1, frames3)]        
     h, w = orig_vs_space[0].shape[:2]
@@ -160,14 +161,18 @@ if __name__ == '__main__':
     # CaptureAndEditVideo()
     # ExtractTooltips()
     # CreateTrainingData()
-    # TrainMobileNetDemo()
+    # TrainMobileDemo()
     # ParseScreenWithMobileNet()
     # TrainCNNDemo()
+    # ParseScreenWithCNN(num_classes=2)
     # CompareSpatialTemporalFiltering()
     # RecordAndSaveVideo('data/videos/cows_test/{}.png')
     # ParseScreenCNN.predict_for_directory('data/videos/cows_test', 'data/videos/cows_test_pred.pkl', num_classes=2)
     # TestFramePredDataLoader()
     # Train3DCNNDemo()
+    # Train3DCNN.load_and_test()
+
+    '''
     frames_raw = []
     frame_files = ParseScreenCNN.natural_sort(os.listdir('data/videos/cows_near'))
     for idx, frame_file in enumerate(frame_files):
@@ -177,4 +182,4 @@ if __name__ == '__main__':
         cv.imshow('Original', frames_raw[idx])
         cv.imshow('Labeled', frames_labeled[idx])
         cv.waitKey(0)
-    # Train3DCNN.load_and_test()
+    '''
